@@ -1,31 +1,27 @@
 var google = require('googleapis');
 var sheets = google.sheets('v4');
 var v;
-function sendDataToSheet(auth, id, temp, hum) {
-  d = dn = new Date()
-  var spreadsheetId = id
 
-  console.log(spreadsheetId)
-  if (d.getDay() == 7 || !spreadsheetId) {
-    dn.setDate(dn.getDate() + 7)
-    title = d.toLocaleDateString() + "-" + dn.toLocaleDateString()
-    addSheet(auth, title).then(id => {
-      instertData(auth, "Temperature", "Humidity ", id);
-    }).then(id => {
-      v = instertData(auth, temp, hum, id, d);
-      console.log("d="+v)
-    })
-  } else {
-    console.log(v)
-    v =  instertData(auth, temp, hum, spreadsheetId, d)
-console.log("c="+v)
-  }
-
+function sendDataToSheet(auth, spreadsheetId, temp, hum, title) {
+  d = new Date(), dn = new Date()
+  return new Promise((resolve) => {
+    if ((d.getDay() == 5 && title.indexOf(d.toLocaleDateString()) < 0) || !spreadsheetId) {
+      dn.setDate(dn.getDate() + 7)
+      title = d.toLocaleDateString() + "-" + dn.toLocaleDateString()
+      resolve(addSheet(auth, title).then(id => {
+        return insertData(auth, "Temperature", "Humidity ", id, null, "Arkusz1!A1:C1").then(() => [id, title]);
+      }))
+    } else {
+      resolve([spreadsheetId, title]);
+    }
+  }).then((arg) => {
+    return insertData(auth, temp, hum, arg[0], d, "Arkusz1!A2:C14").then(() => arg);
+  })
 }
 module.exports = sendDataToSheet;
 
 function addSheet(auth, title) {
-
+  return new Promise((resolve, reject) => {
     var request = {
       resource: {
         "properties": {
@@ -37,38 +33,39 @@ function addSheet(auth, title) {
     sheets.spreadsheets.create(request, function (err, response) {
       if (err) {
         console.log(err);
-        return;
+        reject('The API returned an error: ' + err);
       }
-      return response.spreadsheetId
+      resolve(response.spreadsheetId);
     });
+  })
 }
 
-function instertData(auth, temp, hum, id, d) {
-  var spreadsheetId = id;
-  if (!d) {
-    d = "Date"
-  } else {
-    d = d.toLocaleDateString() + " " + d.toLocaleTimeString('pl-PL')
-  }
-  var request = {
-    spreadsheetId: spreadsheetId,
-    range: 'Arkusz1!A1:B14',
-    valueInputOption: 'RAW',
-
-    resource: {
-      "range": "Arkusz1!A1:B14",
-      "values": [
-        [d, temp, hum]
-      ],
-    },
-    auth: auth
-  };
-
-  sheets.spreadsheets.values.append(request, function (err, response) {
-    if (err) {
-      return;
+function insertData(auth, temp, hum, id, d, range) {
+  return new Promise((resolve, reject) => {
+    var spreadsheetId = id;
+    if (!d) {
+      d = "Date"
+    } else {
+      d = d.toLocaleDateString() + " " + d.toLocaleTimeString('pl-PL')
     }
-  });
-  console.log("xxx="+spreadsheetId)
-  return spreadsheetId;
+    var request = {
+      spreadsheetId: spreadsheetId,
+      range: range,
+      valueInputOption: 'RAW',
+      resource: {
+        "range": range,
+        "values": [
+          [d, temp, hum]
+        ],
+      },
+      auth: auth
+    };
+
+    sheets.spreadsheets.values.append(request, function (err, response) {
+      if (err) {
+        reject(err)
+      }
+    });
+    resolve(spreadsheetId);
+  })
 }

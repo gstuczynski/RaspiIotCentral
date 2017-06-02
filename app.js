@@ -10,11 +10,11 @@ const sendDataToSheet = require('./sendDataToSheet');
 
 var led, servo, proximity, relay, motors = {};
 var board = new five.Board();
-var spreadsheetId
+var spreadsheetId;
+var title = "";
 
 board.on('ready', () => {
   this.repl = false
-
   relay = new five.Relay(10);
   led = new five.Led(13);
   servo = new five.Servo(8);
@@ -66,9 +66,11 @@ app.get('/data/*', (req, res) => {
       return;
     }
     authorize(JSON.parse(content), function (auth) {
-      
-     spreadsheetId = (sendDataToSheet(auth, spreadsheetId ,temp, hum))
-     console.log(spreadsheetId)
+
+      sendDataToSheet(auth, spreadsheetId, temp, hum, title).then((arg) => {
+        spreadsheetId = arg[0]
+        title = arg[1]
+      });
     });
   });
 });
