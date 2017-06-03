@@ -56,7 +56,7 @@ app.get('/motion', (req, res) => {
 })
 
 app.get('/data/*', (req, res) => {
-  res.send("Data sended")
+  res.send("Data sent")
   fullreq = req.originalUrl
   var temp = fullreq.substring(fullreq.indexOf("temp=") + 5, fullreq.indexOf("temp=") + 10);
   var hum = fullreq.substring(fullreq.indexOf("hum=") + 4, fullreq.indexOf("hum=") + 9)
