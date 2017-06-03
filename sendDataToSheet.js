@@ -1,6 +1,5 @@
 var google = require('googleapis');
 var sheets = google.sheets('v4');
-var v;
 
 function sendDataToSheet(auth, spreadsheetId, temp, hum, title) {
   d = new Date(), dn = new Date()
